@@ -207,7 +207,12 @@ npm install
 npm install @mui/material @emotion/react @emotion/styled firebase axios react-router-dom
 ```
 
-### 2. Firebase config
+
+## 🧑‍💻 Frontend Authentication Setup
+
+Here is how to fully implement Firebase Authentication on the client side:
+
+### 1. Firebase Initialization
 
 **src/firebase.js**
 ```js
@@ -215,37 +220,136 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  projectId: "...",
-  appId: "..."
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 ```
 
-### 3. Basic Auth logic
+---
 
-You’ll create:
-- Login.jsx
-- Register.jsx
-- useAuth hook to track the user
-- Protect routes via checking auth.currentUser
+### 2. useAuth Hook
 
-### 4. Connect with backend
-
-Use Firebase ID token:
+**src/hooks/useAuth.js**
 ```js
-const token = await user.getIdToken();
-axios.get("/api/tasks", {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-});
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
+
+export const useAuth = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return unsubscribe;
+  }, []);
+
+  return user;
+};
 ```
 
 ---
+
+### 3. Register Page
+
+**src/pages/Register.jsx**
+```js
+import { useState } from "react";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+
+export default function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const register = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Registration Error:", error.message);
+    }
+  };
+
+  return (
+    <div>
+      <h2>Register</h2>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Password" />
+      <button onClick={register}>Sign Up</button>
+    </div>
+  );
+}
+```
+
+---
+
+### 4. Login Page
+
+**src/pages/Login.jsx**
+```js
+import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const login = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Login Error:", error.message);
+    }
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Password" />
+      <button onClick={login}>Sign In</button>
+    </div>
+  );
+}
+```
+
+---
+
+### 5. Route Protection
+
+Use the `useAuth` hook to conditionally render authenticated routes.
+
+**src/App.jsx**
+```js
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import TaskManager from "./pages/TaskManager";
+import { useAuth } from "./hooks/useAuth";
+
+function App() {
+  const user = useAuth();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/tasks" element={user ? <TaskManager /> : <Navigate to="/login" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+```
+
+Now your frontend is fully wired to Firebase for auth and protected routing.
 
 ## 🚀 Run the App
 
