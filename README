@@ -23,7 +23,7 @@ Users can:
 4. Register a **Web App** and get the config object  
 5. Download the **Service Account Key JSON** under **Project Settings > Service accounts**
 
--------
+---
 
 ## 🛠️ Backend (Node.js + Express + MongoDB + Firebase Admin)
 
