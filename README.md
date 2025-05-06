@@ -1,3 +1,4 @@
+
 # 🧠 Full-Stack Task Manager App (React + Vite + MUI + Firebase Auth + Node.js + MongoDB)
 
 ## 🗂️ Overview
@@ -15,13 +16,62 @@ Users can:
 
 ---
 
+## 🛠️ Install MongoDB (Windows & macOS)
+
+### For Windows
+
+1. Download MongoDB Community Server from [MongoDB Downloads](https://www.mongodb.com/try/download/community).
+2. Run the installer and **select Complete** setup.
+3. Make sure the installer **adds MongoDB to your system PATH**.
+4. Open Command Prompt and run:
+   ```bash
+   mongod
+   ```
+   to start the MongoDB server.
+
+### For macOS
+
+Using Homebrew:
+
+```bash
+brew tap mongodb/brew
+brew install mongodb-community@6.0
+brew services start mongodb/brew/mongodb-community
+```
+
+Check it's running:
+
+```bash
+mongo
+```
+
+---
+
 ## 🔥 Firebase Setup
 
 1. Go to [Firebase Console](https://console.firebase.google.com)  
-2. Create a project  
-3. Enable **Email/Password** sign-in under **Authentication > Sign-in method**  
-4. Register a **Web App** and get the config object  
-5. Download the **Service Account Key JSON** under **Project Settings > Service accounts**
+2. Click **"Add project"** and follow the prompts  
+3. Under **Build > Authentication**, go to the **Sign-in method** tab  
+4. Enable **Email/Password**  
+5. Go to **Project Settings > General**  
+   - Under **Your apps**, click **Add app** → **Web**  
+   - Copy the config object (for React frontend)  
+6. Go to **Project Settings > Service Accounts**  
+   - Click **Generate new private key**  
+   - This downloads the `serviceAccountKey.json` file  
+   - Move it to your `server/` folder
+
+---
+
+## ⚙️ .env Setup
+
+Create a `.env` file inside the `server/` directory:
+
+```
+MONGO_URI=mongodb://localhost:27017/taskmanager
+```
+
+Make sure MongoDB is running locally or use a hosted MongoDB URI.
 
 ---
 
@@ -199,6 +249,18 @@ axios.get("/api/tasks", {
 
 ## 🚀 Run the App
 
+- Start MongoDB (if not running automatically):
+
+**Windows:**
+```bash
+mongod
+```
+
+**macOS (if installed via Homebrew):**
+```bash
+brew services start mongodb/brew/mongodb-community
+```
+
 - Start backend:
 ```bash
 cd server
@@ -218,4 +280,38 @@ npm run dev
 You’ve built a secure full-stack app with:
 - Firebase Authentication (client-managed, server-verified)
 - React + Material UI frontend
-- Node.js + Express + MongoDB backend
+- Node.js + Express backend
+- MongoDB as your database
+
+
+---
+
+## 🧭 MongoDB Compass (Official GUI)
+
+MongoDB Compass is the official graphical interface for managing and exploring MongoDB databases.
+
+### 🔽 Install Compass
+
+- Download from: [https://www.mongodb.com/try/download/compass](https://www.mongodb.com/try/download/compass)
+
+Choose the version for your OS (Windows, macOS, Linux).
+
+### 🚀 Connect to Localhost
+
+Once installed:
+
+1. Launch MongoDB Compass
+2. In the connection dialog, enter:
+   ```
+   mongodb://localhost:27017
+   ```
+3. Click **Connect**
+
+You can now:
+- Browse collections (like `tasks`)
+- View and edit documents
+- Run queries and aggregations
+- Monitor performance
+
+This is extremely helpful for debugging your backend and inspecting data in development.
+
