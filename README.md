@@ -1,11 +1,12 @@
-# 🧠 Full-Stack Task Manager App (React + Vite + MUI + Firebase Auth + Node.js + MongoDB)
+
+# 🧠 Full-Stack Task Manager App (React + Vite + MUI + Firebase Auth + Node.js + MySQL)
 
 ## 🗂️ Overview
 
 Build a task manager app using:
 
 - **Frontend**: React + Vite + Material UI  
-- **Backend**: Node.js + Express + MongoDB (Mongoose)  
+- **Backend**: Node.js + Express + MySQL (via Sequelize)  
 - **Auth**: Firebase Authentication (Email/Password)  
 
 Users can:
@@ -25,14 +26,14 @@ Users can:
 
 ---
 
-## 🛠️ Backend (Node.js + Express + MongoDB + Firebase Admin)
+## 🛠️ Backend (Node.js + Express + MySQL + Sequelize + Firebase Admin)
 
 ### 1. Initialize project
 
 ```bash
 mkdir server && cd server
 npm init -y
-npm install express mongoose cors dotenv firebase-admin
+npm install express sequelize mysql2 cors dotenv firebase-admin
 ```
 
 ### 2. Folder structure
@@ -43,7 +44,8 @@ server/
 ├── routes/
 │   └── tasks.js
 ├── models/
-│   └── Task.js
+│   ├── Task.js
+│   └── index.js
 ├── middleware/
 │   └── verifyToken.js
 ├── .env
@@ -74,19 +76,37 @@ module.exports = async function (req, res, next) {
 };
 ```
 
-### 4. Task model
+### 4. Sequelize setup and Task model
+
+**models/index.js**
+```js
+const { Sequelize } = require("sequelize");
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+  host: process.env.DB_HOST,
+  dialect: "mysql",
+});
+
+const db = {};
+db.Sequelize = Sequelize;
+db.sequelize = sequelize;
+db.Task = require("./Task")(sequelize, Sequelize);
+
+module.exports = db;
+```
 
 **models/Task.js**
 ```js
-const mongoose = require("mongoose");
-
-const taskSchema = new mongoose.Schema({
-  uid: String,
-  title: String,
-  completed: Boolean,
-});
-
-module.exports = mongoose.model("Task", taskSchema);
+module.exports = (sequelize, DataTypes) => {
+  const Task = sequelize.define("Task", {
+    uid: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    title: DataTypes.STRING,
+    completed: DataTypes.BOOLEAN,
+  });
+  return Task;
+};
 ```
 
 ### 5. Task routes
@@ -95,29 +115,30 @@ module.exports = mongoose.model("Task", taskSchema);
 ```js
 const express = require("express");
 const router = express.Router();
-const Task = require("../models/Task");
+const { Task } = require("../models");
 const verifyToken = require("../middleware/verifyToken");
 
 router.use(verifyToken);
 
 router.get("/", async (req, res) => {
-  const tasks = await Task.find({ uid: req.uid });
+  const tasks = await Task.findAll({ where: { uid: req.uid } });
   res.json(tasks);
 });
 
 router.post("/", async (req, res) => {
-  const newTask = new Task({ ...req.body, uid: req.uid });
-  const saved = await newTask.save();
-  res.json(saved);
+  const task = await Task.create({ ...req.body, uid: req.uid });
+  res.json(task);
 });
 
 router.put("/:id", async (req, res) => {
-  const updated = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(updated);
+  const task = await Task.update(req.body, {
+    where: { id: req.params.id, uid: req.uid },
+  });
+  res.json(task);
 });
 
 router.delete("/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
+  await Task.destroy({ where: { id: req.params.id, uid: req.uid } });
   res.sendStatus(204);
 });
 
@@ -129,71 +150,28 @@ module.exports = router;
 **index.js**
 ```js
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+const db = require("./models");
 require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI);
-
 app.use("/api/tasks", require("./routes/tasks"));
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+db.sequelize.sync().then(() => {
+  app.listen(5000, () => console.log("Server running on port 5000"));
+});
 ```
 
 ---
 
 ## 🎨 Frontend (React + Vite + Material UI + Firebase)
 
-### 1. Create React app with Vite
+Same as previous: setup Vite app, install Firebase, Axios, React Router, and Material UI.
 
-```bash
-npm create vite@latest client --template react
-cd client
-npm install
-npm install @mui/material @emotion/react @emotion/styled firebase axios react-router-dom
-```
-
-### 2. Firebase config
-
-**src/firebase.js**
-```js
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-
-const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "...",
-  projectId: "...",
-  appId: "..."
-};
-
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-```
-
-### 3. Basic Auth logic
-
-You’ll create:
-- Login.jsx
-- Register.jsx
-- useAuth hook to track the user
-- Protect routes via checking auth.currentUser
-
-### 4. Connect with backend
-
-Use Firebase ID token:
-```js
-const token = await user.getIdToken();
-axios.get("/api/tasks", {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-});
-```
+Update task requests to interact with the new MySQL backend instead of MongoDB.
 
 ---
 
@@ -216,7 +194,7 @@ npm run dev
 ## ✅ Conclusion
 
 You’ve built a secure full-stack app with:
-- Firebase Authentication (client-managed, server-verified)
+- Firebase Authentication
+- MySQL database managed via Sequelize ORM
+- Node.js + Express backend
 - React + Material UI frontend
-- Node.js + Express + MongoDB backend
-
